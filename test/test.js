@@ -1191,7 +1191,7 @@ test("ignore hidden elements at start", function(){
     ok(! validate.form(), "form should be invalid when required element is visible");
 });
 
-test("onfocusin should also remote the validClass", function(){
+test("onfocusin should also remove the validClass", function(){
 	var form = $('#mvl_form');
 	var validate = form.validate({
 			focusCleanup: true,
