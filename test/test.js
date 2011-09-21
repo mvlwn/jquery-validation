@@ -1254,3 +1254,46 @@ test("onfocusin should also remove the validClass", function(){
 	ok(! validate.form(), "form should be invalid when required element is empty"); // 17
 })
 
+test("only validate when the value changes, fake onchange event", function(){	
+	
+	var form = $('#mvl_form');
+	var validate = form.validate({
+			rules: {
+				last_name: {
+					required: true
+				}
+			},
+			onfocusin: function(element) {
+				this.lastActive = element;
+				this.lastActiveValue = $(element).val();
+				// hide error label and remove error class on focus if enabled
+				if ( this.settings.focusCleanup && !this.blockFocusCleanup ) {
+					this.settings.unhighlight && this.settings.unhighlight.call( this, element, this.settings.errorClass, this.settings.validClass );
+					this.addWrapper(this.errorsFor(element)).hide();
+				}
+			},
+			onfocusout: function(element) {
+				var value = this.lastActiveValue;
+				var changed = value != $(element).val();
+				this.lastActiveValue = '';
+				if (changed && !this.checkable(element) && (element.name in this.submitted || !this.optional(element)) ) {
+					this.lastActiveValidated = true;
+					this.element(element);
+				}else{					
+					this.lastActiveValidated = false;
+				}
+			},
+		});
+	ok( (validate.lastActiveValidated === undefined), "The form should be default false" ); // 1
+
+	$("#mvl_first_name").focus().trigger("focusin").val("Change 1").trigger("focusout");
+	ok( (validate.lastActiveValidated === true), "The element should have been validated" ); // 2
+
+	$("#mvl_first_name").focus().trigger("focusin").trigger("focusout");
+	ok( (validate.lastActiveValidated === false), "The element should not have been validated" ); // 3
+
+	$("#mvl_first_name").focus().trigger("focusin").val("Change 2").trigger("focusout");
+	ok( (validate.lastActiveValidated === true), "The element should have been validated" ); // 4
+})
+
+
