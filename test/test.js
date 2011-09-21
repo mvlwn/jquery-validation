@@ -1,4 +1,8 @@
-window.sessionStorage && sessionStorage.clear();
+try{
+	window.sessionStorage && sessionStorage.clear();
+}catch(e){
+}
+
 jQuery.validator.defaults.debug = true;
 $.mockjaxSettings.log = $.noop;
 
@@ -1186,3 +1190,67 @@ test("ignore hidden elements at start", function(){
     $('#userForm [name=username]').show();
     ok(! validate.form(), "form should be invalid when required element is visible");
 });
+
+test("onfocusin should also remote the validClass", function(){
+	var form = $('#mvl_form');
+	var validate = form.validate({
+			focusCleanup: true,
+			rules: {
+				first_name: {
+					required: true,
+					minlength: 3
+				},
+				last_name: {
+					required: true
+				}
+			},
+			onfocusin: function(element) {
+				this.lastActive = element;
+				// hide error label and remove error class on focus if enabled
+				if ( this.settings.focusCleanup && !this.blockFocusCleanup ) {
+					this.settings.unhighlight && this.settings.unhighlight.call( this, element, this.settings.errorClass, this.settings.validClass );
+					// Remove validclass too
+					$(element).removeClass(this.settings.validClass);
+					this.addWrapper(this.errorsFor(element)).hide();
+				}
+			},
+		});
+		
+   form.get(0).reset();
+	
+	$("#mvl_first_name").focus().trigger("focusin").val('Ma').trigger("focusout");
+	ok( form.is(":has(label.error[for=mvl_first_name]:visible)"), "should have an errorClass with too short value" ); // 1
+	ok(! form.is(":has(.valid[name=first_name]:visible)"), "should not have an validClass" ); // 2	
+	
+	$("#mvl_first_name").focus().trigger("focusin");	
+	ok(! form.is(":has(label.error[for=mvl_first_name]:visible)"), "focusCleanup should remove error class" ); // 3
+	ok(! form.is(":has(.valid[name=first_name]:visible)"), "focusCleanup should remove valid class" ); // 4
+
+	$("#mvl_first_name").val('Martijn').trigger("focusout");
+	ok(! form.is(":has(label.error[for=mvl_first_name]:visible)"), "with valid value there should not be an errorClass" ); // 5
+	ok( form.is(":has(.valid[name=first_name]:visible)"), "with valid value there be a validClass" ); // 6
+	
+	$("#mvl_first_name").focus().trigger("focusin").val('').trigger("focusout");	
+	ok( form.is(":has(label.error[for=mvl_first_name]:visible)"), "Blank should give an errorClass" ); // 7
+	ok(! form.is(":has(.valid[name=first_name]:visible)"), "Blank should not give an validClass" ); // 8
+	
+	$("#mvl_last_name").focus().trigger("focusin");	
+	ok(! form.is(":has(label.error[for=mvl_last_name]:visible)"), "focusCleanup should remove error class" ); // 9
+	ok(! form.is(":has(.valid[name=last_name]:visible)"), "focusCleanup should remove valid class" ); // 10
+
+	$("#mvl_last_name").val('van Leeuwen').trigger("focusout");
+	ok(! form.is(":has(label.error[for=mvl_last_name]:visible)"), "with valid value there should not be an errorClass" ); // 11
+	ok( form.is(":has(.valid[name=last_name]:visible)"), "with valid value there be a validClass" ); // 12
+	
+	$("#mvl_last_name").focus().trigger("focusin");
+	ok(! form.is(":has(label.error[for=mvl_last_name]:visible)"), "focusCleanup should remove error class" ); // 13
+	ok(! form.is(":has(.valid[name=last_name]:visible)"), "focusCleanup should remove valid class" ); // 14
+	
+	$("#mvl_last_name").val('').trigger("focusout");	
+	ok(! form.is(":has(label.error[for=mvl_last_name]:visible)"), "Blank should not give an errorClass" ); // 15
+	ok(! form.is(":has(.valid[name=last_name]:visible)"), "Blank should not give an validClass" ); // 16
+	
+	validate.form();
+	ok(! validate.form(), "form should be invalid when required element is empty"); // 17
+})
+
